@@ -1,3 +1,4 @@
+/*jshint esnext: true */
 /**
  * This file holds the ui logic for the tic tac toe game.
  * It controls all of the ui elements of the page and the game.
@@ -9,75 +10,138 @@
  * @link      URL
  * @since     27.09.2016
  * @requires jquery-3.1.0.js | gameLogic.js
-**/
+ **/
 
-//Holds the ui module
-var ui = function( ){
-  "use strict";
+/**
+ * Holds the ui module
+ * @return {[nil]} [this is just a function that applys all the interactivity to the game and page]
+ */
+var ui = function() {
+    "use strict";
 
-  //We hide the finish html code at the start
-  $('#finish').hide();
+    /**
+     * This functions takes care of switching the focus between the two players / ai
+     * @param  {[String]} newPlayer            [the next player we shall focus on]
+     * @param  {[jQuery DOM object]} tile      [this holds the tile that the player pressed, in this case it is a li object]
+     * @return {[nil]}                         [we don't return anything]
+     */
+    function playerFocus(newPlayer, tile) {
+        $('#' + newPlayer).addClass('active');
+        gameLogic.move(tile.attr('value'), newPlayer, function(winnerFound) {
+            //Handler when move is done
+            if (winnerFound) {
+                $('#finish .message').text('Winner');
+                $('#finish').addClass('screen-win-' + gameLogic.currentPlayer).show('slow', function() {
 
-  //Button event that happens when user presses the start game button
-  $('#start .button').click(function(event) {//click event
-    $('#start').fadeOut('slow', function() {//fade out the start screen
-
-      //Instantiate gameLogic here
-      gameLogic.currentPlayer = 'o';
-    });
-  });
-
-  //Event handelser for when mouse enters a tile
-  var playerEnterHover = function( event ) {
-    var tile = $(event.currentTarget);
-    if (!tile.hasClass('o') && !tile.hasClass('x')) {
-      var currentPlayerSvg = $('<img>').attr('src', 'img/' + gameLogic.currentPlayer + '.svg').css('width', '100%');
-      tile.append(currentPlayerSvg);
+                });
+            }
+        });
     }
-  };
 
-
-  //Event handelser for when mouse leaves a tile
-  var playerLeaveHover = function( event ) {
-    var tile = $(event.currentTarget);
-    if (!tile.hasClass('o') && !tile.hasClass('x')) {
-      tile.empty();
+    /**
+     * Function that resest and clears the bord
+     * @return {[nil]} [we don't return anything]
+     */
+    function clearBord() {
+        //We remove the classe's from all the li objects, and then emptys them afterwards
+        $('.box').removeClass('x').removeClass('o').empty();
     }
-  };
 
+    /**
+     * Sets up a new game
+     * @return {[nil]} [we don't return anything]
+     */
+    function setupGame() {
+        gameLogic.newGame('o', false, draw);
+    }
 
-  function playerFocus( newPlayer, tile ) {
-    $('#' + newPlayer).addClass('active');
-    gameLogic.move(tile.attr('value'), newPlayer, function(winnerFound) {
-      //Handler when move is done
-      if(winnerFound) {
-        $('#finish .message').text('Winner').after($('<img>').attr('src', 'img/' + gameLogic.currentPlayer + '.svg'));
-        $('#finish').css('background-color', 'orange').show('slow', function() {
+    /**
+     * This function displays the draw screen if the game ends in a draw
+     * @return {[nil]} [we don't return anything]
+     */
+    var draw = function() {
+        $('#finish .message').text("It's a Tie!"); //Change the message text
+        $('#finish').addClass('screen-win-tie').show('slow', function() { //Show the screen
 
         });
-      }
-    });
-  }
+    };
 
+    /**
+     * Function that starts of a game
+     * @param  {[jQuery event]} event [Event from a mouse click]
+     * @return {[nil]}       [we don't return anything]
+     */
+    var startGame = function(event) {
+        $('#start').fadeOut('slow', function() { //fade out the start screen
+            //We instantiate the gameLogic
+            setupGame();
+        });
+    };
 
-  //Event handelser for when user press's a tile
-  var playerPress = function( event ) {
+    /**
+     * Event handelser for when mouse enters a tile
+     * @param  {[jQuery event]} event [Event from a mouse hovering over an li object]
+     * @return {[nil]}                [we don't return anything]
+     */
+    var playerEnterHover = function(event) {
+        var tile = $(event.currentTarget);
+        if (!tile.hasClass('o') && !tile.hasClass('x')) { //in case we havent selected the tile
+            var currentPlayerSvg = $('<img>').attr('src', 'img/' + gameLogic.currentPlayer + '.svg').css('width', '100%'); //Add an svg to the tile
+            tile.append(currentPlayerSvg);
+        }
+    };
 
-      var tile = $(event.currentTarget);
-      $('.active').removeClass('active');
-      tile.addClass(gameLogic.currentPlayer);
-    switch (gameLogic.currentPlayer) {
-      case 'o':
-        playerFocus('x', tile);
-      break;
-      case 'x':
-        playerFocus('o', tile);
-      break;
-    }
+    /**
+     * Event handelser for when mouse leaves a tile
+     * @param  {[jQuery event]} event [Event from a mouse no longer hovering over an li object]
+     * @return {[nil]}                [we don't return anything]
+     */
+    var playerLeaveHover = function(event) {
+        var tile = $(event.currentTarget);
+        if (!tile.hasClass('o') && !tile.hasClass('x')) {
+            tile.empty(); //and empty it if it is not selected
+        }
+    };
 
-  };
+    /**
+     * Event handelser for when user press's a tile
+     * @param  {[jQuery event]} event [Event from a mouse click on any of the .box li objects]
+     * @return {[nil]}                [we don't return anything]
+     */
+    var playerPress = function(event) {
+        var tile = $(event.currentTarget);
+        if (!tile.hasClass('o') && !tile.hasClass('x')) {//We tjek if the tile allready is selceted 
+          $('.active').removeClass('active'); //We remove the active class from the current player
+          tile.addClass(gameLogic.currentPlayer); //We add the class of the currentPlayer, so the css syles will be added to the tile
+          switch (gameLogic.currentPlayer) { //We focus on the next player
+              case 'o':
+                  playerFocus('x', tile);
+                  break;
+              case 'x':
+                  playerFocus('o', tile);
+                  break;
+          }
+        }
+    };
 
-  $('.box').mouseenter(playerEnterHover).mouseleave(playerLeaveHover).click(playerPress);
+    /**
+     * Event function that restarts the game
+     * @return {[nil]} [we don't return anything]
+     */
+    var playAgain = function() {
+        clearBord();
+        setupGame();
+        $('#finish').removeClass('screen-win-x').removeClass('screen-win-o').removeClass('screen-win-tie').hide('slow', function() {
+            //We remove all the different classes and hide the win screen again
+        });
+    };
 
+    //We hide the finish html code at the start
+    $('#finish').hide();
+
+    //We add all the events
+    $('#start .button').click(startGame);
+    $('.box').mouseenter(playerEnterHover).mouseleave(playerLeaveHover).click(playerPress);
+    $('#finish .button').click(playAgain);
 
 }();
