@@ -26,17 +26,33 @@ var ui = function() {
      * @return {[nil]}                         [we don't return anything]
      */
     function playerFocus(newPlayer, tile) {
+        $('.active').removeClass('active'); //We remove the active class from the current player
+        tile.addClass(gameLogic.currentPlayer); //We add the class of the currentPlayer, so the css syles will be added to the tile
         $('#' + newPlayer).addClass('active');
         gameLogic.move(tile.attr('value'), newPlayer, function(winnerFound) {
             //Handler when move is done
             if (winnerFound) {
-                $('#finish .message').text('Winner');
-                $('#finish').addClass('screen-win-' + gameLogic.currentPlayer).show('slow', function() {
+                $('#finish .message').text($('#' + gameLogic.currentPlayer + ' .playerName')[0].innerHTML + ' Wins!'); //Display the winning player
+                $('#finish').addClass('screen-win-' + gameLogic.currentPlayer).show('slow', function() { //Show the win screen
 
                 });
             }
         });
     }
+
+    /**
+     * This function takes care of the ui for the ai
+     * @param  {[int]} moveID [When the ai moves, it send the id of the location to the move function, this id is between 0-8]
+     * @return {[nil]}        [we don't return anything]
+     */
+    var aiMoveFunction = function(moveID) {
+        var tile = $('.box').eq(moveID);
+        if (!tile.hasClass('o') && !tile.hasClass('x')) { //in case we havent selected the tile
+            var currentPlayerSvg = $('<img>').attr('src', 'img/' + gameLogic.currentPlayer + '.svg').css('width', '100%'); //Add an svg to the tile
+            tile.append(currentPlayerSvg);
+        }
+        playerFocus('o', tile);
+    };
 
     /**
      * Function that resest and clears the bord
@@ -52,7 +68,7 @@ var ui = function() {
      * @return {[nil]} [we don't return anything]
      */
     function setupGame() {
-        gameLogic.newGame('o', false, draw);
+        gameLogic.newGame('o', $('#playAi')[0].checked, draw, aiMoveFunction); //Setup the gameLogic
     }
 
     /**
@@ -72,6 +88,9 @@ var ui = function() {
      * @return {[nil]}       [we don't return anything]
      */
     var startGame = function(event) {
+        $('#playerNameOne').text($('#playerOneInput')[0].value); //We get the names the players input, and display them
+        $('#playerNameTwo').text($('#playerTwoInput')[0].value);
+
         $('#start').fadeOut('slow', function() { //fade out the start screen
             //We instantiate the gameLogic
             setupGame();
@@ -110,17 +129,15 @@ var ui = function() {
      */
     var playerPress = function(event) {
         var tile = $(event.currentTarget);
-        if (!tile.hasClass('o') && !tile.hasClass('x')) {//We tjek if the tile allready is selceted 
-          $('.active').removeClass('active'); //We remove the active class from the current player
-          tile.addClass(gameLogic.currentPlayer); //We add the class of the currentPlayer, so the css syles will be added to the tile
-          switch (gameLogic.currentPlayer) { //We focus on the next player
-              case 'o':
-                  playerFocus('x', tile);
-                  break;
-              case 'x':
-                  playerFocus('o', tile);
-                  break;
-          }
+        if (!tile.hasClass('o') && !tile.hasClass('x')) { //We tjek if the tile allready is selceted
+            switch (gameLogic.currentPlayer) { //We focus on the next player
+                case 'o':
+                    playerFocus('x', tile);
+                    break;
+                case 'x':
+                    playerFocus('o', tile);
+                    break;
+            }
         }
     };
 
@@ -128,7 +145,7 @@ var ui = function() {
      * Event function that restarts the game
      * @return {[nil]} [we don't return anything]
      */
-    var playAgain = function() {
+    var playAgain = function(event) {
         clearBord();
         setupGame();
         $('#finish').removeClass('screen-win-x').removeClass('screen-win-o').removeClass('screen-win-tie').hide('slow', function() {

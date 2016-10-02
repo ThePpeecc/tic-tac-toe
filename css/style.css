@@ -107,6 +107,9 @@ h1 {
   .players-turn {
     outline: none;
   }
+  .players p {
+    margin: 0;
+  }
   #o.active svg g, #x.active svg g {
     fill: #fff; }
   #o.active,
